@@ -5,11 +5,7 @@ ExampleGame::ExampleGame()
 {
 	// Will be freed in Game dtor
 	allStates = {
-		new IntroState  ( *this, render ),   // 0
-		new PlasmaState ( *this, render ),   // 1
-		new SortState   ( *this, render ),   // 2
-		new CameraState ( *this, render ),   // 3
-		new ShooterState( *this, render ),   // 4
+		new TileState() // 0
 	};
 
 	// The virtual call is ok here

@@ -168,6 +168,10 @@ add_executable( sdl_basegame
         src/example/plasmastate.cpp
         src/example/shooterstate.cpp
         src/example/sortstate.cpp
+        src/example/tilestate.h
+        src/example/tilestate.cpp
+        src/example/player.h
+        src/example/player.cpp
 )
 
 target_include_directories( sdl_basegame

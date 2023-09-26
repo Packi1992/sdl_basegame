@@ -6,11 +6,7 @@
 #include <recthelper.h>
 
 class ExampleGame;
-class IntroState;
-class PlasmaState;
-class SortState;
-class CameraState;
-class ShooterState;
+class TileState;
 
 class ExampleGame final : public Game
 {
