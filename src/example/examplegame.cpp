@@ -1,11 +1,12 @@
 #include "examplegame.h"
+#include "tilestate.h"
 
 ExampleGame::ExampleGame()
 	: Game( "Example SDL Game", Point{ 1280, 960 }, false )
 {
 	// Will be freed in Game dtor
 	allStates = {
-		new TileState() // 0
+		new TileState(*this, render ) // 0
 	};
 
 	// The virtual call is ok here

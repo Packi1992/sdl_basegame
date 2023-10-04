@@ -83,16 +83,16 @@
     <Image Include="asset\graphic\ball.png">
       <Filter>asset\graphic</Filter>
     </Image>
-    <Image Include="asset\graphic\bg-layer-1.png">
+    <Image Include="asset\graphic\_bg-layer-1.png">
       <Filter>asset\graphic</Filter>
     </Image>
-    <Image Include="asset\graphic\bg-layer-2.png">
+    <Image Include="asset\graphic\_bg-layer-2.png">
       <Filter>asset\graphic</Filter>
     </Image>
-    <Image Include="asset\graphic\bg-layer-3.png">
+    <Image Include="asset\graphic\_bg-layer-3.png">
       <Filter>asset\graphic</Filter>
     </Image>
-    <Image Include="asset\graphic\bg-layer-4.png">
+    <Image Include="asset\graphic\_bg-layer-4.png">
       <Filter>asset\graphic</Filter>
     </Image>
     <Image Include="asset\graphic\fire.png">

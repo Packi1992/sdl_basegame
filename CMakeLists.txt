@@ -172,6 +172,8 @@ add_executable( sdl_basegame
         src/example/tilestate.cpp
         src/example/player.h
         src/example/player.cpp
+        src/example/button.cpp
+        src/example/button.h
 )
 
 target_include_directories( sdl_basegame
