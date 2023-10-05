@@ -47,17 +47,21 @@ protected:
 
 	void loadTextures();
 	void buildMap();
-	void drawMap( Texture * tileset );
+
 	Texture * loadTexture( std::string path );
 	void loadMap();
 	void saveMap();
 	void movePlayer( const u32 frame );
 	void updateCam();
 	void handleButtons();
+
+	void drawTilemap();
+	void drawMap();
 	void drawText(int x, int y, std::string text);
 	void drawCenterText( int x, int y, Rect * dst, const std::string& text );
 	void drawNumber( int x, int y, Rect * dst, int number );
 	void drawHint();
+	void drawUi();
 
 public:
 	// ctor
@@ -70,8 +74,9 @@ public:
 	void Update( const u32 frame, const u32 totalMSec, const float deltaT ) override;
 	void Render( const u32 frame, const u32 totalMSec, const float deltaT ) override;
 
-	bool notOnGround();
 	void drawBackground();
+	void handleCollision();
+	bool TileCollidable( u8 i );
 };
 
 

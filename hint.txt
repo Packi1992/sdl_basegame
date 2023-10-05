@@ -5,9 +5,9 @@
 
 Use Buttons to Select Tileset (NO TILESET / TILESET 1 - 3)
 
-Press "SHOW TILESET" and Select Tile by leftclick
+     Press "SHOW TILESET" and Select Tile by leftclick
 
-Press Save Button to save map
+     Press Save Button to save map
 
 
 
@@ -18,6 +18,10 @@ strg R + L Click on Map -> place selected Tile
 n                       -> show Tilenumbers
 
 g                       -> show Tilegrid
+
+r                       -> draw player Rect
+
+c                       -> draw collision Rect
 
 
                       Player Controls

@@ -5,58 +5,72 @@
 #include <iostream>
 #include "player.h"
 
-void Player::draw( Point offset, const u32 frame )
+void Player::draw( Point offset, const u32 frame, bool drawRect = false , bool drawColRect=false)
 {
-	Rect p = { (int) (pos.x - _size.x / 2 - (float) offset.x), (int) (pos.y - _size.y + (float) offset.y / 2),
+	Rect p = { (int)(_pos.x * 64 - (float)offset.x), (int) (960 - ((_pos.y + 1) * 64)),
 	           (int) _size.x, (int) _size.y };
-	if( _render == nullptr )
+	if( _render == nullptr || drawRect)
 	{
-		std::cerr << "you need to ini Player first";
+		if(_render == nullptr)
+			std::cerr << "you need to ini Player first";
 		SDL_SetRenderDrawColor( _render, _color[0], _color[1], _color[2], _color[3] );
 		// do calculations to get proper pos on screen
 		SDL_RenderDrawRect( _render, &p );
+	}
+	if( drawColRect){
+		SDL_SetRenderDrawColor( _render, _color[0], _color[1], _color[2], _color[3] );
+		FRect colr = getCollisionRect(64);
+		colr.x *= 64;
+		colr.y = (960 - ((colr.y) * 64));
+		colr.h *= 64;
+		colr.w *= 64;
+		SDL_RenderDrawRectF(_render,&colr);
 	}
 	Rect src = { 0, 0, 48, 48 };
 	if( _rollCounter < 6 ){
 		_rollCounter = ((int) (frame - _startRollFrame) / 6) % 7;
 		src.x = _rollCounter * 48;
-		SDL_RenderCopy( _render, _roll, &src, &p );
+		SDL_RenderCopyEx( _render, _roll, &src, &p,0, nullptr,
+		                  _lastDir==RIGHT?SDL_RendererFlip::SDL_FLIP_NONE:SDL_RendererFlip::SDL_FLIP_HORIZONTAL);
+
 	}
 	else{
-		if( _speed.x > 0.0 ){
-			src.x = (int) (((frame) / 6) % 8) * 48;
-			SDL_RenderCopy( _render, _run, &src, &p );
-		}
-		if( _speed.x < 0.0 ){
-			src.x = (int) ((frame / 6) % 8) * 48;
-			SDL_RenderCopyEx( _render, _run, &src, &p, 180, nullptr, SDL_RendererFlip::SDL_FLIP_VERTICAL );
-		}
-		if( _speed.x == 0 ){
-			src.x = (int) ((frame / 6) % 8) * 48;
-			SDL_RenderCopy( _render, _idle, &src, &p );
-		}
 		if( _speed.y != 0 ){
-			if( _speed.y < -20 )
+			if( _speed.y < - 0.5*_maxSpeed.y )
 				src.x = 0;
-			if( _speed.y > -5 || _speed.y < 5 )
-				src.x = 1 * 48;
-			if( _speed.y > 5 )
-			{
+			else if( _speed.y > 0.5*_maxSpeed.y )
 				src.x = 2 * 48;
-			}
-			src.x = (int) ((frame / 6) % 3) * 48;
-			SDL_RenderCopy( _render, _jump, &src, &p );
+			else
+				src.x = 2 * 48;
+			SDL_RenderCopyEx( _render, _jump, &src, &p,0, nullptr,
+							  _lastDir==RIGHT?SDL_RendererFlip::SDL_FLIP_NONE:SDL_RendererFlip::SDL_FLIP_HORIZONTAL);
 		}
+		else{
+			if( _speed.x != 0 ){
+				src.x = (int) ((frame / 6) % 8) * 48;
+				SDL_RenderCopyEx( _render, _run, &src, &p,0, nullptr,
+				                  _lastDir==RIGHT?SDL_RendererFlip::SDL_FLIP_NONE:SDL_RendererFlip::SDL_FLIP_HORIZONTAL);
+			}
+			else{
+				src.x = (int) ((frame / 6) % 8) * 48;
+				SDL_RenderCopyEx( _render, _idle, &src, &p,0, nullptr,
+				                  _lastDir==RIGHT?SDL_RendererFlip::SDL_FLIP_NONE:SDL_RendererFlip::SDL_FLIP_HORIZONTAL);
+			}
+		}
+
+
 	}
 }
 
-void Player::ini( Renderer * render )
+void Player::ini( Renderer * render, int RenderSize )
 {
 	_render = render;
 	_idle = loadTexture( BasePath"asset/graphic/Character Idle 48x48.png" );
 	_run = loadTexture( BasePath"asset/graphic/PlayerWalk 48x48.png" );
 	_roll = loadTexture( BasePath"asset/graphic/Player Roll 48x48.png" );
 	_jump = loadTexture( BasePath"asset/graphic/player jump 48x48.png" );
+	_mapSize.x = (float)(_size.x*0.6) / RenderSize;
+	_mapSize.y = (float)(_size.y*0.6) / RenderSize;
 }
 
 Texture * Player::loadTexture( std::string path )
@@ -76,4 +90,13 @@ Texture * Player::loadTexture( std::string path )
 		return nullptr;
 	}
 	return nt;
+}
+
+FRect Player::getCollisionRect(float RenderSize)
+{
+	float x = _pos.x + (_size.x * 0.25f) / RenderSize;
+	float y = _pos.y + (_size.y * 0.4f) / RenderSize;
+	float w = (_size.x * 0.5f)/RenderSize;
+	float h = (_size.y * 0.65f)/RenderSize;
+	return {x,y,w,h};
 }
