@@ -41,6 +41,26 @@ void TileState::Events( const u32 frame, const u32 totalMSec, const float deltaT
 	{
 		if( event.type == SDL_MOUSEBUTTONDOWN )
 			click = true;
+		if( event.type == SDL_KEYDOWN )
+		{
+			switch( event.key.keysym.scancode )
+			{
+				case SDL_SCANCODE_C:
+					_drawColRect = !_drawColRect;
+					break;
+				case SDL_SCANCODE_R:
+					_drawRenderRect = !_drawRenderRect;
+					break;
+				case SDL_SCANCODE_N:
+					_showTileNumbers = !_showTileNumbers;
+					break;
+				case SDL_SCANCODE_G:
+					_showGrid = !_showGrid;
+					break;
+				default:
+					break;
+			}
+		}
 		if( game.HandleEvent( event ) )
 			continue;
 	}
@@ -53,15 +73,13 @@ void TileState::Update( const u32 frame, const u32 totalMSec, const float deltaT
 	handleCollision();
 	movePlayer( frame );
 	(_player._rollCountdown - 1 > 0) ? _player._rollCountdown-- : _player._rollCountdown = 0;
-	updateCam();
+	updateCam(); // Viewport!
 
 	// close overlay with ESCAPE
 	if( key_array[SDL_SCANCODE_ESCAPE] && btn_show.is_active() )
 		btn_show.set_pressed( false );
 	if( key_array[SDL_SCANCODE_ESCAPE] && btn_hint.is_active() )
 		btn_hint.set_pressed( false );
-	showTileNumbers = key_array[SDL_SCANCODE_N];
-	showGrid = key_array[SDL_SCANCODE_G];
 
 	handleButtons();
 
@@ -78,7 +96,7 @@ void TileState::Update( const u32 frame, const u32 totalMSec, const float deltaT
 	// map manipulation
 	if( key_array[SDL_SCANCODE_RCTRL] && click )
 	{
-		// get relativ position on map
+		// get relative position on map
 		Point sel_map_entry = { (cursur.x + (int) cam.x) / RENDERSIZE, (960 - cursur.y) / RENDERSIZE };
 		// evaluate if inside map Bounds
 		if( sel_map_entry.x >= 0 && sel_map_entry.x < MAPWIDTH &&
@@ -118,12 +136,13 @@ void TileState::Render( const u32 frame, const u32 totalMSec, const float deltaT
 	drawBackground();
 
 	drawMap();
-	_player.draw( cam, frame, key_array[SDL_SCANCODE_R], key_array[SDL_SCANCODE_C] );
+	_player.draw( cam, frame, _drawRenderRect, _drawColRect );
 
 	drawUi();
 
 	// draw overlay
-	drawTilemap();
+	drawTileMap();
+	drawCollisions();
 	drawHint();
 }
 
@@ -141,7 +160,7 @@ void TileState::loadTextures()
 
 Texture * TileState::loadTexture( std::string path )
 {
-	Texture * nt = nullptr;
+	Texture * nt;
 
 	nt = IMG_LoadTexture( render, path.c_str() );
 	if( !nt )
@@ -162,6 +181,7 @@ void TileState::UnInit()
 	SDL_DestroyTexture( _bg[1] );
 	SDL_DestroyTexture( _bg[2] );
 	SDL_DestroyTexture( _clouds );
+	SDL_DestroyTexture( _font );
 }
 
 
@@ -242,25 +262,30 @@ void TileState::saveMap()
 		oStream << "\n";
 	}
 	oStream.close();
-
-
 }
 
 void TileState::handleCollision()
 {
+	touchedTiles.clear();
 	FRect colRect = _player.getCollisionRect( RENDERSIZE );
-
-	int tile = map[(int) colRect.x][(int) colRect.y];
-	if( tile >= 5 && tile <= 10 )
+	// one of error
+	touchedTiles.push_back({(int) colRect.x,(int) colRect.y-1});
+	touchedTiles.push_back({(int) (colRect.x + colRect.w),(int) colRect.y-1});
+	touchedTiles.push_back({(int) colRect.x,(int) (colRect.y + colRect.h)-1});
+	touchedTiles.push_back({(int) (colRect.x + colRect.w),(int) (colRect.y + colRect.h)-1});
+	for( Point t : touchedTiles )
 	{
-		map[(int) colRect.x][(int) colRect.y] = 0;
+		if( map[t.x][t.y] >= 5 && map[t.x][t.y] <= 10 ) // Collision with Coin
+		{
+			map[t.x][t.y] = 0; // delete coin
+		}
 	}
+
 }
 
 void TileState::movePlayer( const u32 frame )
 {
 	// change acceleration
-	//std::cout << "Left " << key_array[SDL_SCANCODE_A] << "| Right " << key_array[SDL_SCANCODE_D] << std::endl;
 	if( key_array[SDL_SCANCODE_D] && !key_array[SDL_SCANCODE_A] )
 		this->_player._speed.x < _player._maxSpeed.x ?
 			this->_player._speed.x += _player._acceleration.x :
@@ -279,8 +304,8 @@ void TileState::movePlayer( const u32 frame )
 		// moving right
 		float xam = collisionRect.x + collisionRect.w + _player._speed.x; // rightmost x after movement
 		int xamMap = (int) xam;
-		bool top = TileCollidable( map[xamMap][(int) collisionRect.y] );
-		bool bot = TileCollidable( map[xamMap][(int) (collisionRect.y - collisionRect.h)] );
+		bool top = tileCollideAble( map[xamMap][(int) collisionRect.y] );
+		bool bot = tileCollideAble( map[xamMap][(int) (collisionRect.y - collisionRect.h)] );
 		if( top || bot )
 		{
 			_player._pos.x = (float) xamMap - collisionRect.w * 1.5f;
@@ -295,8 +320,8 @@ void TileState::movePlayer( const u32 frame )
 		// moving left
 		float xam = collisionRect.x + _player._speed.x; // leftmost x after movement
 		int xamMap = (int) xam;
-		bool top = TileCollidable( map[xamMap][(int) collisionRect.y] );
-		bool bot = TileCollidable( map[xamMap][(int) (collisionRect.y - collisionRect.h)] );
+		bool top = tileCollideAble( map[xamMap][(int) collisionRect.y] );
+		bool bot = tileCollideAble( map[xamMap][(int) (collisionRect.y - collisionRect.h)] );
 		if( top || bot )
 		{
 			_player._pos.x = (float) xamMap + 1 - collisionRect.w * 0.5f;
@@ -313,8 +338,8 @@ void TileState::movePlayer( const u32 frame )
 		_player._onGround = false;
 		float yam = collisionRect.y + _player._speed.y; // topmost y after movement
 		int yamMap = (int) yam;
-		bool left = TileCollidable( map[(int) collisionRect.x][yamMap] );
-		bool right = TileCollidable( map[(int) (collisionRect.y - collisionRect.h)][yamMap] );
+		bool left = tileCollideAble( map[(int) collisionRect.x][yamMap] );
+		bool right = tileCollideAble( map[(int) (collisionRect.y - collisionRect.h)][yamMap] );
 		if( left || right )
 		{
 			_player._pos.y = (float) yamMap - collisionRect.h * 0.5f;
@@ -327,10 +352,10 @@ void TileState::movePlayer( const u32 frame )
 	if( _player._speed.y <= 0 )
 	{
 		// moving down
-		float yam = collisionRect.y - collisionRect.h - 0.9 + _player._speed.y; // botmost y after movement
+		float yam = collisionRect.y - collisionRect.h - 0.9f + _player._speed.y; // bot most y after movement
 		int yamMap = (int) yam;
-		bool left = TileCollidable( map[(int) collisionRect.x][yamMap] );
-		bool right = TileCollidable( map[(int) (collisionRect.x + collisionRect.w)][yamMap] );
+		bool left = tileCollideAble( map[(int) collisionRect.x][yamMap] );
+		bool right = tileCollideAble( map[(int) (collisionRect.x + collisionRect.w)][yamMap] );
 		if( left || right )
 		{
 			_player._pos.y = (float) yamMap + (float) _player._size.y / RENDERSIZE * 0.89f;
@@ -367,7 +392,7 @@ void TileState::movePlayer( const u32 frame )
 	if( _player._rollCountdown == 0 && key_array[SDL_SCANCODE_LCTRL] )
 	{
 		_player._rollCounter = 0;
-		_player._startRollFrame = frame;
+		_player._startRollFrame = (int) frame;
 		_player._rollCountdown = 400;
 	}
 	if( _player._speed.x > 0 )
@@ -377,12 +402,22 @@ void TileState::movePlayer( const u32 frame )
 
 }
 
-void TileState::updateCam()
+void TileState::updateCam() // need more fixes
 {
-	if( (1280 - (_player._pos.x * RENDERSIZE - cam.x)) < 150 )
-		cam.x += 10;
-	if( _player._pos.x * RENDERSIZE - cam.x < 150 )
-		cam.x <= 9 ? cam.x = 0 : cam.x -= 10;
+	if( ((int) (_player._pos.x * RENDERSIZE) - cam.x) > SCREENWIDTH - 150 )
+	{
+		if( _player._speed.x > 0 )
+			cam.x += (int) (RENDERSIZE * _player._speed.x);
+		else
+			cam.x -= (int) (RENDERSIZE * _player._speed.x);
+	}
+	if( (int) (_player._pos.x * RENDERSIZE) - cam.x < 150 )
+	{
+		if( _player._speed.x < 0 )
+			cam.x += (int) (RENDERSIZE * _player._speed.x);
+		if( cam.x < 0 )
+			cam.x = 0;
+	}
 }
 
 void TileState::handleButtons()
@@ -450,7 +485,7 @@ void TileState::drawText( int x, int y, std::string text )
 	Rect src = { 0, 0, 16, 16 };
 	for( int i = 0; i < (int) text.size(); i++ )
 	{
-		int ascii_value = text[i];
+		int ascii_value = (u_char) text[i];
 		int row = ascii_value / 16 * 16;
 		int col = ascii_value % 16 * 16;
 		src.x = col;
@@ -544,14 +579,14 @@ void TileState::drawMap()
 			dst.y = SCREENHEIGHT - ((y + 1) * RENDERSIZE);
 			if( (dst.x > (-RENDERSIZE)) && dst.x < SCREENWIDTH && tile != 0 )
 			{
-				if( tileset == nullptr && tile != 0 )
+				if( tileset == nullptr )
 				{
 					SDL_SetRenderDrawColor( render, 0, 0, 0, 255 );
 					SDL_RenderFillRect( render, &dst );
 				}
 				else
 					SDL_RenderCopy( render, tileset, &src, &dst );
-				if( showTileNumbers )
+				if( _showTileNumbers )
 				{
 					SDL_SetRenderDrawColor( render, 255, 255, 255, 255 );
 					drawNumber( dst.x, dst.y, &dst, tile );
@@ -559,7 +594,7 @@ void TileState::drawMap()
 			}
 		}
 	}
-	if( showGrid )
+	if( _showGrid )
 	{
 		SDL_SetRenderDrawColor( render, 0, 255, 0, 255 );
 		for( int x = 0; x < MAPWIDTH; x++ )
@@ -577,7 +612,7 @@ void TileState::drawMap()
 	}
 }
 
-void TileState::drawTilemap()
+void TileState::drawTileMap()
 {
 	if( !btn_show.is_active() )
 		return;
@@ -604,15 +639,29 @@ void TileState::drawUi()
 	btn_hint.draw( render );
 }
 
-bool TileState::TileCollidable( u8 i )
+bool TileState::tileCollideAble( u8 i )
 {
 	if( i >= 5 && i <= 10 ) // coins
 		return false;
-	if( (i >= 23 && i <= 26) || i == 41 || i == 42)
+	if( (i >= 23 && i <= 26) || i == 41 || i == 42 )
 		return false; // greens
-	if( i == 39) // shroom
+	if( i == 39 ) // mushroom
 		return false;
-	if( i == 124 || i == 126 || i == 141 || i == 143) // signs
+	if( i == 124 || i == 126 || i == 141 || i == 143 ) // signs
 		return false;
 	return i != 0;
+}
+
+void TileState::drawCollisions()
+{
+	if(!_drawColRect)
+		return;
+	// draw Rects with possible collisions
+	Rect colRect= {0,0,RENDERSIZE,RENDERSIZE};
+	SDL_SetRenderDrawColor(render,255,0,0,255);
+	for(Point p : touchedTiles){
+		colRect.x = p.x*RENDERSIZE-cam.x;
+		colRect.y = SCREENHEIGHT-(p.y*RENDERSIZE+1);
+		SDL_RenderDrawRect(render,&colRect);
+	}
 }

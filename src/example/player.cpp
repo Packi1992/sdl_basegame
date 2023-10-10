@@ -19,12 +19,12 @@ void Player::draw( Point offset, const u32 frame, bool drawRect = false , bool d
 	}
 	if( drawColRect){
 		SDL_SetRenderDrawColor( _render, _color[0], _color[1], _color[2], _color[3] );
-		FRect colr = getCollisionRect(64);
-		colr.x *= 64;
-		colr.y = (960 - ((colr.y) * 64));
-		colr.h *= 64;
-		colr.w *= 64;
-		SDL_RenderDrawRectF(_render,&colr);
+		FRect cRect = getCollisionRect( 64);
+		cRect.x = cRect.x * 64 - (float)offset.x;
+		cRect.y = (960 - ((cRect.y) * 64));
+		cRect.h *= 64;
+		cRect.w *= 64;
+		SDL_RenderDrawRectF(_render,&cRect);
 	}
 	Rect src = { 0, 0, 48, 48 };
 	if( _rollCounter < 6 ){
@@ -38,8 +38,6 @@ void Player::draw( Point offset, const u32 frame, bool drawRect = false , bool d
 		if( _speed.y != 0 ){
 			if( _speed.y < - 0.5*_maxSpeed.y )
 				src.x = 0;
-			else if( _speed.y > 0.5*_maxSpeed.y )
-				src.x = 2 * 48;
 			else
 				src.x = 2 * 48;
 			SDL_RenderCopyEx( _render, _jump, &src, &p,0, nullptr,
@@ -69,11 +67,11 @@ void Player::ini( Renderer * render, int RenderSize )
 	_run = loadTexture( BasePath"asset/graphic/PlayerWalk 48x48.png" );
 	_roll = loadTexture( BasePath"asset/graphic/Player Roll 48x48.png" );
 	_jump = loadTexture( BasePath"asset/graphic/player jump 48x48.png" );
-	_mapSize.x = (float)(_size.x*0.6) / RenderSize;
-	_mapSize.y = (float)(_size.y*0.6) / RenderSize;
+	_mapSize.x = (float)(_size.x*0.6) / (float)RenderSize;
+	_mapSize.y = (float)(_size.y*0.6) / (float)RenderSize;
 }
 
-Texture * Player::loadTexture( std::string path )
+Texture * Player::loadTexture( std::string path ) const
 {
 	if( _render == nullptr )
 	{
@@ -81,7 +79,7 @@ Texture * Player::loadTexture( std::string path )
 		return nullptr;
 	}
 
-	Texture * nt{};
+	Texture * nt;
 
 	nt = IMG_LoadTexture( _render, path.c_str() );
 	if( !nt )
@@ -92,7 +90,7 @@ Texture * Player::loadTexture( std::string path )
 	return nt;
 }
 
-FRect Player::getCollisionRect(float RenderSize)
+FRect Player::getCollisionRect(float RenderSize) const
 {
 	float x = _pos.x + (_size.x * 0.25f) / RenderSize;
 	float y = _pos.y + (_size.y * 0.4f) / RenderSize;

@@ -30,12 +30,15 @@ protected:
 	Rect _rClouds = { 0, 0, 1280, 250 };
 	Rect _tilesetDst = { 250, 10, 1024, 640 };
 	Rect _selTileDst = { 5, 440, 200, 200 };
-	bool showGrid = false;
-	bool showTileNumbers = false;
+
 	// input handling
 	Point cursur{};
 	bool click = false;
 	const u8 * key_array = SDL_GetKeyboardState( nullptr );
+	bool _showGrid = false;
+	bool _showTileNumbers = false;
+	bool _drawColRect = false;
+	bool _drawRenderRect = false;
 
 	// update and data
 	int _selTile = 0;
@@ -44,6 +47,7 @@ protected:
 	Button t0, t1, t2, t3;
 	Button btn_show, btn_save, btn_hint;
 	u8 map[MAPWIDTH][MAPHEIGHT] = {};
+	Vector<Point> touchedTiles{};
 
 	void loadTextures();
 	void buildMap();
@@ -55,7 +59,7 @@ protected:
 	void updateCam();
 	void handleButtons();
 
-	void drawTilemap();
+	void drawTileMap();
 	void drawMap();
 	void drawText(int x, int y, std::string text);
 	void drawCenterText( int x, int y, Rect * dst, const std::string& text );
@@ -76,7 +80,8 @@ public:
 
 	void drawBackground();
 	void handleCollision();
-	bool TileCollidable( u8 i );
+	static bool tileCollideAble( u8 i );
+	void drawCollisions();
 };
 
 

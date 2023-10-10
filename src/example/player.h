@@ -9,7 +9,7 @@
 class Player
 {
 private:
-	Texture * loadTexture( std::string path );
+	Texture * loadTexture( std::string path ) const;
 public:
 	enum dir{
 		LEFT,
@@ -40,7 +40,7 @@ public:
 
 	void draw( Point offset, const u32 frame, bool drawRect, bool drawColRect );
 	void ini( Renderer * render, int RenderSize );
-	FRect getCollisionRect(float RenderSize);
+	FRect getCollisionRect(float RenderSize) const;
 };
 
 
