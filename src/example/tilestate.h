@@ -9,7 +9,7 @@
 #include "player.h"
 #include "button.h"
 
-#define MAPWIDTH 40
+#define MAPWIDTH 80
 #define MAPHEIGHT 14
 #define RENDERSIZE 64
 #define TILESIZE 32

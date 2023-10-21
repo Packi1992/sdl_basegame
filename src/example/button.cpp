@@ -22,6 +22,7 @@ bool Button::is_clicked( Point * Cursor )
 		_pressed = !_pressed;
 		return true;
 	}
+
 	return false;
 }
 
